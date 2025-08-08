@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:demo_application/models/call_request.dart';
 import 'package:demo_application/models/user.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:demo_application/features/users/bloc/users_event.dart';
@@ -9,12 +10,14 @@ import 'package:demo_application/services/auth_service.dart';
 class UsersBloc extends Bloc<UsersEvent, UsersState> {
   final FirebaseService _firebaseService = FirebaseService();
   final AuthService _authService = AuthService();
+  StreamSubscription<CallRequest?>? _callStatusSubscription;
 
   UsersBloc() : super(const UsersState()) {
     on<LoadUsersEvent>(_onLoadUsers);
     on<InitiateCallEvent>(_onInitiateCall);
     on<CancelCallEvent>(_onCancelCall);
     on<RefreshUsersEvent>(_onRefreshUsers);
+    on<CallStatusChanged>(_onCallStatusChanged);
 
     // Load users immediately
     add(LoadUsersEvent());
@@ -57,6 +60,9 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
       final callRequest = await _firebaseService.initiateCall(event.receiver);
 
       if (callRequest != null) {
+        // Start listening for call status changes
+        _startListeningForCallStatus(callRequest.id);
+        
         emit(state.copyWith(
           loading: false,
           callInitiated: true,
@@ -80,9 +86,12 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
     if (state.activeCall != null) {
       try {
         await _firebaseService.endCall(state.activeCall!.id);
+        _stopListeningForCallStatus();
         emit(state.copyWith(
           callInitiated: false,
           activeCall: null,
+          callAccepted: false,
+          callDeclined: false,
         ));
       } catch (e) {
         emit(state.copyWith(
@@ -94,5 +103,59 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
 
   void _onRefreshUsers(RefreshUsersEvent event, Emitter<UsersState> emit) {
     add(LoadUsersEvent());
+  }
+
+  void _onCallStatusChanged(CallStatusChanged event, Emitter<UsersState> emit) {
+    final updatedCall = event.callRequest;
+    
+    // Update the active call with new status
+    emit(state.copyWith(activeCall: updatedCall));
+    
+    // Handle different call status changes
+    switch (updatedCall.status) {
+      case CallStatus.accepted:
+        // Call was accepted, navigate to meeting should be handled by UI
+        emit(state.copyWith(
+          callAccepted: true,
+          callInitiated: false,
+        ));
+        _stopListeningForCallStatus();
+        break;
+      case CallStatus.declined:
+      case CallStatus.ended:
+        // Call was declined or ended
+        emit(state.copyWith(
+          callInitiated: false,
+          activeCall: null,
+          callDeclined: updatedCall.status == CallStatus.declined,
+        ));
+        _stopListeningForCallStatus();
+        break;
+      default:
+        // Keep waiting for other status changes
+        break;
+    }
+  }
+
+  void _startListeningForCallStatus(String callId) {
+    _callStatusSubscription?.cancel();
+    _callStatusSubscription = _firebaseService
+        .listenForOutgoingCallUpdates(callId)
+        .listen((callRequest) {
+      if (callRequest != null) {
+        add(CallStatusChanged(callRequest));
+      }
+    });
+  }
+
+  void _stopListeningForCallStatus() {
+    _callStatusSubscription?.cancel();
+    _callStatusSubscription = null;
+  }
+
+  @override
+  Future<void> close() {
+    _stopListeningForCallStatus();
+    return super.close();
   }
 }

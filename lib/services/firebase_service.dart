@@ -149,6 +149,32 @@ class FirebaseService {
         });
   }
 
+  // Listen for outgoing call status changes (for caller)
+  Stream<CallRequest?> listenForOutgoingCallUpdates(String callId) {
+    return _firestore
+        .collection(callRequestsCollection)
+        .doc(callId)
+        .snapshots()
+        .map((snapshot) {
+          if (!snapshot.exists || snapshot.data() == null) return null;
+          return CallRequest.fromJson(snapshot.data()!);
+        });
+  }
+  
+  // Listen for call status changes for any participant (to handle when call ends for everyone)
+  Stream<CallRequest?> listenForCallStatusUpdates(String callId) {
+    return _firestore
+        .collection(callRequestsCollection)
+        .doc(callId)
+        .snapshots()
+        .where((snapshot) => snapshot.exists && snapshot.data() != null)
+        .map((snapshot) => CallRequest.fromJson(snapshot.data()!))
+        .where((callRequest) => 
+            callRequest.status == CallStatus.ended || 
+            callRequest.status == CallStatus.declined
+        );
+  }
+
   // Accept call
   Future<void> acceptCall(String callId) async {
     await FirebaseUtils.safeDocumentUpdate(
@@ -235,6 +261,24 @@ class FirebaseService {
     );
     if (doc == null) return null;
     return CallRequest.fromJson(doc.data()! as Map<String, dynamic>);
+  }
+  
+  // Get call request by meeting ID
+  Future<CallRequest?> getCallRequestByMeetingId(String meetingId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection(callRequestsCollection)
+          .where('meetingId', isEqualTo: meetingId)
+          .limit(1)
+          .get();
+          
+      if (querySnapshot.docs.isEmpty) return null;
+      
+      return CallRequest.fromJson(querySnapshot.docs.first.data());
+    } catch (e) {
+      print('Error getting call request by meeting ID: $e');
+      return null;
+    }
   }
 
   // Send call notification (simulated - in real app would use FCM)

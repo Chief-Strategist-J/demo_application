@@ -7,8 +7,13 @@ abstract class MeetingEvent {
 class InitMeetingEvent extends MeetingEvent {
   final String meetingId;
   final String token;
+  final String? callId;
 
-  const InitMeetingEvent({required this.meetingId, required this.token});
+  const InitMeetingEvent({
+    required this.meetingId, 
+    required this.token,
+    this.callId,
+  });
 }
 
 class ParticipantJoinedEvent extends MeetingEvent {
@@ -28,3 +33,7 @@ class ToggleMicEvent extends MeetingEvent {}
 class ToggleCameraEvent extends MeetingEvent {}
 
 class LeaveMeetingEvent extends MeetingEvent {}
+
+class CallEndedRemotelyEvent extends MeetingEvent {
+  const CallEndedRemotelyEvent();
+}

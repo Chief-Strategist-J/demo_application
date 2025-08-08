@@ -9,6 +9,8 @@ class UsersState extends Equatable {
   final String? error;
   final bool callInitiated;
   final CallRequest? activeCall;
+  final bool callAccepted;
+  final bool callDeclined;
 
   const UsersState({
     this.users = const [],
@@ -17,6 +19,8 @@ class UsersState extends Equatable {
     this.error,
     this.callInitiated = false,
     this.activeCall,
+    this.callAccepted = false,
+    this.callDeclined = false,
   });
 
   UsersState copyWith({
@@ -26,6 +30,8 @@ class UsersState extends Equatable {
     String? error,
     bool? callInitiated,
     CallRequest? activeCall,
+    bool? callAccepted,
+    bool? callDeclined,
   }) {
     return UsersState(
       users: users ?? this.users,
@@ -34,6 +40,8 @@ class UsersState extends Equatable {
       error: error,
       callInitiated: callInitiated ?? this.callInitiated,
       activeCall: activeCall ?? this.activeCall,
+      callAccepted: callAccepted ?? this.callAccepted,
+      callDeclined: callDeclined ?? this.callDeclined,
     );
   }
 
@@ -49,5 +57,7 @@ class UsersState extends Equatable {
         error,
         callInitiated,
         activeCall,
+        callAccepted,
+        callDeclined,
       ];
 }

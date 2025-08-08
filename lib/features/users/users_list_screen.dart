@@ -4,6 +4,8 @@ import 'package:demo_application/features/users/bloc/users_bloc.dart';
 import 'package:demo_application/features/users/bloc/users_event.dart';
 import 'package:demo_application/features/users/bloc/users_state.dart';
 import 'package:demo_application/features/users/components/user_tile.dart';
+import 'package:demo_application/features/videoCall/videoCall/meeting_screen.dart';
+import 'package:demo_application/core/constants.dart';
 
 class UsersListScreen extends StatelessWidget {
   const UsersListScreen({super.key});
@@ -32,14 +34,56 @@ class UsersListScreen extends StatelessWidget {
               );
             }
             
-            if (state.callInitiated && state.activeCall != null) {
-              // Navigate to waiting screen or show call initiated dialog
+            // Handle call accepted - navigate to meeting screen
+            if (state.callAccepted && state.activeCall != null) {
+              // Close any open dialogs first
+              Navigator.of(context).popUntil((route) => route.isFirst);
+              
+              // Navigate to meeting screen
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => MeetingScreen(
+                    meetingId: state.activeCall!.meetingId!,
+                    token: videoCallSdkToken,
+                    callId: state.activeCall!.id,
+                  ),
+                ),
+              );
+            }
+            
+            // Handle call declined
+            else if (state.callDeclined) {
+              // Close any open dialogs first
+              Navigator.of(context).popUntil((route) => route.isFirst);
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Call was declined'),
+                  backgroundColor: theme.colorScheme.error,
+                ),
+              );
+            }
+            
+            // Handle call initiated - show calling dialog
+            else if (state.callInitiated && state.activeCall != null) {
               showDialog(
                 context: context,
                 barrierDismissible: false,
                 builder: (_) => AlertDialog(
                   title: const Text('Calling...'),
-                  content: Text('Calling ${state.activeCall!.receiverName}'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text('Calling ${state.activeCall!.receiverName}'),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Waiting for them to answer...',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () {
