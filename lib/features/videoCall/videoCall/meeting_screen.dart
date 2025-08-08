@@ -34,6 +34,7 @@ class MeetingScreen extends StatelessWidget {
       child: BlocConsumer<MeetingBloc, MeetingState>(
         listener: (context, state) {
           if (state.callEnded && context.mounted) {
+            print('Call ended, navigating to home screen');
             Navigator.popUntil(context, (route) => route.isFirst);
           }
         },

@@ -161,7 +161,10 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
         .listenForCallStatusUpdates(callId)
         .listen(
           (callRequest) {
-            if (callRequest != null) {
+            // Only trigger remote call end if the call was ended/declined and we didn't initiate it
+            if (callRequest != null && 
+                (callRequest.status == CallStatus.ended || callRequest.status == CallStatus.declined)) {
+              print('Call ended remotely: ${callRequest.status}');
               add(const CallEndedRemotelyEvent());
             }
           },
@@ -179,7 +182,9 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
   @override
   Future<void> close() {
     // Cleanup when BLoC is disposed
+    _stopCallStatusMonitoring();
     state.room?.leave();
+    _currentCallId = null;
     return super.close();
   }
 }

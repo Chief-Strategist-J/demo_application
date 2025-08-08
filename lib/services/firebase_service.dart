@@ -172,7 +172,10 @@ class FirebaseService {
         .where((callRequest) => 
             callRequest.status == CallStatus.ended || 
             callRequest.status == CallStatus.declined
-        );
+        )
+        .handleError((error) {
+          print('Error in call status monitoring stream: $error');
+        });
   }
 
   // Accept call

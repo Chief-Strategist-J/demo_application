@@ -1,17 +1,27 @@
-# Video Calling Demo Application
+# 📱 Video Calling Demo Application
 
 A Flutter application that demonstrates real-time video calling functionality using Firebase for user management and VideoSDK for video communication.
 
-## Features
+## 🌟 Screenshots
+
+| Home Screen | Users List | Incoming Call | Video Meeting |
+|-------------|------------|---------------|---------------|
+| ![Home Screen](screenshot/Screenshot%20from%202025-08-08%2018-09-17.png) | ![Users List](screenshot/Screenshot%20from%202025-08-08%2018-09-27.png) | ![Incoming Call](screenshot/Screenshot%20from%202025-08-08%2018-09-35.png) | ![Video Meeting](screenshot/Screenshot%20from%202025-08-08%2018-09-51.png) |
+
+| Meeting Controls | Demo User Creation |
+|------------------|--------------------|
+| ![Meeting Controls](screenshot/Screenshot%20from%202025-08-08%2018-10-02.png) | ![Demo Users](screenshot/Screenshot%20from%202025-08-08%2018-10-15.png) |
+
+## ✨ Features
 
 ### ✅ Implemented
-- **Real-time User Management**: Firebase-powered user presence and status tracking
-- **Video Call Initiation**: Select contacts and start video calls
-- **Incoming Call Handling**: Beautiful incoming call screen with accept/decline options
-- **Video Meeting Integration**: Integration with VideoSDK for actual video calls
-- **Demo Users**: Automatic creation of demo users for testing
-- **Real-time Status**: Online/offline status and call status tracking
-- **Call Kit Integration**: Native call interface support
+- **🔥 Real-time User Management**: Firebase-powered user presence and status tracking
+- **📞 Video Call Initiation**: Select contacts and start video calls
+- **📲 Incoming Call Handling**: Beautiful incoming call screen with accept/decline options
+- **🎥 Video Meeting Integration**: Integration with VideoSDK for actual video calls
+- **👥 Demo Users**: Automatic creation of demo users for testing
+- **🟢 Real-time Status**: Online/offline status and call status tracking
+- **📱 Call Kit Integration**: Native call interface support
 
 ### 📱 Key Components
 
