@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _setupAnimations();
     _initializeServices();
   }
-  
+
   void _setupAnimations() {
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1000),
@@ -38,47 +38,41 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.elasticOut,
-    ));
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
   }
 
   Future<void> _initializeServices() async {
     try {
       await _firebaseService.initialize();
       _listenForIncomingCalls();
-      
+
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        
+
         // Start animations when loaded
         _fadeController.forward();
         Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted) _scaleController.forward();
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('✅ Connected! Ready to make calls.'),
             backgroundColor: Theme.of(context).colorScheme.primary,
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -88,7 +82,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         setState(() {
           _isLoading = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('⚠️ Connection issue: $e'),
@@ -101,17 +95,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _listenForIncomingCalls() {
-    _incomingCallSubscription = _firebaseService.listenForIncomingCalls().listen(
-      (callRequest) {
-        if (callRequest != null && mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => IncomingCallScreen(callRequest: callRequest),
-            ),
-          );
-        }
-      },
-    );
+    _incomingCallSubscription = _firebaseService
+        .listenForIncomingCalls()
+        .listen((callRequest) {
+          if (callRequest != null && mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => IncomingCallScreen(callRequest: callRequest),
+              ),
+            );
+          }
+        });
   }
 
   Future<void> _signOut() async {
@@ -148,9 +142,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -206,9 +198,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Main Content with Animations
                 FadeTransition(
                   opacity: _fadeAnimation,
@@ -230,7 +222,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary.withOpacity(0.3),
+                                color: theme.colorScheme.primary.withOpacity(
+                                  0.3,
+                                ),
                                 blurRadius: 20,
                                 spreadRadius: 2,
                                 offset: const Offset(0, 8),
@@ -244,9 +238,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Title
                       Text(
                         'Ready to Connect',
@@ -256,9 +250,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Subtitle
                       Text(
                         'Connect with friends and colleagues through high-quality video calls. Start conversations that matter.',
@@ -268,9 +262,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      
+
                       const SizedBox(height: 48),
-                      
+
                       // Features Row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -298,9 +292,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Action Button
                 ScaleTransition(
                   scale: _scaleAnimation,
@@ -338,11 +332,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.contacts,
-                              color: Colors.white,
-                              size: 24,
-                            ),
+                            Icon(Icons.contacts, color: Colors.white, size: 24),
                             const SizedBox(width: 12),
                             Text(
                               'View Contacts & Make Call',
@@ -357,7 +347,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
               ],
             ),
@@ -366,7 +356,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
     );
   }
-  
+
   Widget _buildFeatureItem(
     ThemeData theme,
     IconData icon,
@@ -382,11 +372,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             color: theme.colorScheme.primary.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            color: theme.colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 24),
         ),
         const SizedBox(height: 8),
         Text(
@@ -400,6 +386,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         Text(
           subtitle,
           style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 10,
             color: theme.colorScheme.onSurface.withOpacity(0.6),
           ),
           textAlign: TextAlign.center,
