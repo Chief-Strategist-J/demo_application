@@ -1,0 +1,2 @@
+String videoCallSdkToken =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlrZXkiOiJiNzc2MTA2MS01NTUwLTRiZjctOWYyMi1mNmQxODJmZmI0ODIiLCJwZXJtaXNzaW9ucyI6WyJhbGxvd19qb2luIl0sImlhdCI6MTc1NDU1NDI4NywiZXhwIjoxNzU1MTU5MDg3fQ.9Q_F5qU-Pvarqw8d_SGr4sAwGKE4b4rPwDvWBdvJ94k";

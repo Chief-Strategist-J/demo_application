@@ -1,3 +1,5 @@
+import 'package:demo_application/features/call/component/action_button.dart';
+import 'package:demo_application/features/call/component/animated_avatar.dart';
 import 'package:demo_application/features/call/bloc/call_bloc.dart';
 import 'package:demo_application/features/call/bloc/call_event.dart';
 import 'package:demo_application/features/call/bloc/call_state.dart';
@@ -39,7 +41,7 @@ class CallingPage extends StatelessWidget {
                     /// Caller Info
                     Column(
                       children: [
-                        _AnimatedAvatar(imageUrl: callKitParams.avatar),
+                        AnimatedAvatar(imageUrl: callKitParams.avatar),
                         const SizedBox(height: 24),
                         Text(
                           callKitParams.nameCaller ?? 'Unknown Caller',
@@ -69,22 +71,22 @@ class CallingPage extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _ActionButton(
+                          ActionButton(
                             icon: Icons.call,
                             label: 'Connect',
                             color: theme.colorScheme.primary,
                             iconColor: theme.colorScheme.onPrimary,
-                            textColor: theme.colorScheme.onBackground,
+                            textColor: theme.colorScheme.onSurface,
                             onPressed: state.isConnected
                                 ? null
                                 : () => bloc.add(ConnectCall()),
                           ),
-                          _ActionButton(
+                          ActionButton(
                             icon: Icons.call_end,
                             label: 'End',
                             color: theme.colorScheme.error,
                             iconColor: theme.colorScheme.onError,
-                            textColor: theme.colorScheme.onBackground,
+                            textColor: theme.colorScheme.onSurface,
                             onPressed: () => bloc.add(EndCall()),
                           ),
                         ],
@@ -97,98 +99,6 @@ class CallingPage extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-}
-
-class _AnimatedAvatar extends StatefulWidget {
-  final String? imageUrl;
-
-  const _AnimatedAvatar({this.imageUrl});
-
-  @override
-  State<_AnimatedAvatar> createState() => _AnimatedAvatarState();
-}
-
-class _AnimatedAvatarState extends State<_AnimatedAvatar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-
-    _animation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _animation,
-      child: CircleAvatar(
-        radius: 64,
-        backgroundColor: Colors.grey.shade300,
-        backgroundImage: widget.imageUrl != null
-            ? NetworkImage(widget.imageUrl!)
-            : null,
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final Color iconColor;
-  final Color textColor;
-  final VoidCallback? onPressed;
-
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.iconColor,
-    required this.textColor,
-    this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = onPressed == null;
-
-    return Column(
-      children: [
-        FloatingActionButton(
-          heroTag: label,
-          onPressed: onPressed,
-          backgroundColor: isDisabled ? Colors.grey : color,
-          foregroundColor: iconColor,
-          elevation: 4,
-          child: Icon(icon),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: textColor),
-        ),
-      ],
     );
   }
 }

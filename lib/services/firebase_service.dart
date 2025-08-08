@@ -1,5 +1,3 @@
-// firebase_service.dart
-
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:demo_application/firebase_options.dart';
@@ -16,32 +14,35 @@ class FirebaseService {
   factory FirebaseService() => _instance;
   FirebaseService._internal();
 
-  late FirebaseFirestore _firestore;
-  late DatabaseReference _database;
-  late FirebaseMessaging _messaging;
-  late auth.FirebaseAuth _auth;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
 
   String? _currentUserId;
   User? _currentUser;
   StreamSubscription? _callRequestSubscription;
   StreamSubscription? _usersSubscription;
 
+  // Collections
   static const String usersCollection = 'users';
   static const String callRequestsCollection = 'call_requests';
 
+  // Initialize Firebase service
   Future<void> initialize() async {
-    _firestore = FirebaseFirestore.instance;
-    _database = FirebaseDatabase.instance.ref();
-    _messaging = FirebaseMessaging.instance;
-    _auth = auth.FirebaseAuth.instance;
-
+    // Anonymous auth for demo purposes
     if (_auth.currentUser == null) {
       await _auth.signInAnonymously();
     }
     _currentUserId = _auth.currentUser!.uid;
 
+    // Initialize current user if not exists
     await _initializeCurrentUser();
+
+    // Set online status
     await setUserOnlineStatus(true);
+
+    // Listen for app lifecycle changes
     _setupPresenceSystem();
   }
 
@@ -54,6 +55,7 @@ class FirebaseService {
         .get();
 
     if (!userDoc.exists) {
+      // Create demo user
       final fcmToken = await _messaging.getToken() ?? '';
       final newUser = User(
         id: _currentUserId!,
@@ -77,6 +79,7 @@ class FirebaseService {
   void _setupPresenceSystem() {
     if (_currentUserId == null) return;
 
+    // Set up real-time presence
     final presenceRef = _database.child('presence').child(_currentUserId!);
     final isOnlineRef = _database.child('.info/connected');
 
@@ -91,6 +94,7 @@ class FirebaseService {
     });
   }
 
+  // Create demo users
   Future<void> createDemoUsers() async {
     final demoUsers = [
       User(
@@ -139,6 +143,7 @@ class FirebaseService {
     await batch.commit();
   }
 
+  // Get all users except current user
   Stream<List<User>> getUsers() {
     return _firestore
         .collection(usersCollection)
@@ -150,8 +155,10 @@ class FirebaseService {
         );
   }
 
+  // Get current user
   User? get currentUser => _currentUser;
 
+  // Set user online status
   Future<void> setUserOnlineStatus(bool isOnline) async {
     if (_currentUserId == null) return;
 
@@ -161,10 +168,12 @@ class FirebaseService {
     });
   }
 
+  // Initiate a video call
   Future<CallRequest?> initiateCall(User receiver) async {
     if (_currentUser == null || receiver.isInCall) return null;
 
     try {
+      // Create meeting ID using video SDK
       final meetingId = await createMeeting();
 
       final callRequest = CallRequest(
@@ -180,11 +189,13 @@ class FirebaseService {
         createdAt: DateTime.now(),
       );
 
+      // Save call request to Firestore
       await _firestore
           .collection(callRequestsCollection)
           .doc(callRequest.id)
           .set(callRequest.toJson());
 
+      // Update both users' call status
       await Future.wait([
         _firestore.collection(usersCollection).doc(_currentUser!.id).update({
           'isInCall': true,
@@ -196,6 +207,7 @@ class FirebaseService {
         }),
       ]);
 
+      // Send notification to receiver (in a real app, this would use FCM)
       await _sendCallNotification(callRequest);
 
       return callRequest;
@@ -205,6 +217,7 @@ class FirebaseService {
     }
   }
 
+  // Listen for incoming calls
   Stream<CallRequest?> listenForIncomingCalls() {
     if (_currentUserId == null) {
       return Stream.value(null);
@@ -213,7 +226,10 @@ class FirebaseService {
     return _firestore
         .collection(callRequestsCollection)
         .where('receiverId', isEqualTo: _currentUserId)
-        .where('status', whereIn: [CallStatus.initiated.name, CallStatus.ringing.name])
+        .where(
+          'status',
+          whereIn: [CallStatus.initiated.name, CallStatus.ringing.name],
+        )
         .orderBy('createdAt', descending: true)
         .limit(1)
         .snapshots()
@@ -223,6 +239,7 @@ class FirebaseService {
         });
   }
 
+  // Accept call
   Future<void> acceptCall(String callId) async {
     await _firestore.collection(callRequestsCollection).doc(callId).update({
       'status': CallStatus.accepted.name,
@@ -230,6 +247,7 @@ class FirebaseService {
     });
   }
 
+  // Decline call
   Future<void> declineCall(String callId) async {
     final callDoc = await _firestore
         .collection(callRequestsCollection)
@@ -248,13 +266,13 @@ class FirebaseService {
         'isInCall': false,
         'currentCallId': null,
       }),
-      _firestore.collection(usersCollection).doc(callRequest.receiverId).update({
-        'isInCall': false,
-        'currentCallId': null,
-      }),
+      _firestore.collection(usersCollection).doc(callRequest.receiverId).update(
+        {'isInCall': false, 'currentCallId': null},
+      ),
     ]);
   }
 
+  // End call
   Future<void> endCall(String callId) async {
     final callDoc = await _firestore
         .collection(callRequestsCollection)
@@ -273,13 +291,13 @@ class FirebaseService {
         'isInCall': false,
         'currentCallId': null,
       }),
-      _firestore.collection(usersCollection).doc(callRequest.receiverId).update({
-        'isInCall': false,
-        'currentCallId': null,
-      }),
+      _firestore.collection(usersCollection).doc(callRequest.receiverId).update(
+        {'isInCall': false, 'currentCallId': null},
+      ),
     ]);
   }
 
+  // Get call request by ID
   Future<CallRequest?> getCallRequest(String callId) async {
     final doc = await _firestore
         .collection(callRequestsCollection)
@@ -289,13 +307,17 @@ class FirebaseService {
     return CallRequest.fromJson(doc.data()!);
   }
 
+  // Send call notification (simulated - in real app would use FCM)
   Future<void> _sendCallNotification(CallRequest callRequest) async {
+    // In a real implementation, this would send an FCM notification
+    // For demo purposes, we'll just print the notification
     print('📞 Sending call notification to ${callRequest.receiverName}');
     print('   From: ${callRequest.callerName}');
     print('   Call ID: ${callRequest.id}');
     print('   Meeting ID: ${callRequest.meetingId}');
   }
 
+  // Clean up resources
   void dispose() {
     _callRequestSubscription?.cancel();
     _usersSubscription?.cancel();
