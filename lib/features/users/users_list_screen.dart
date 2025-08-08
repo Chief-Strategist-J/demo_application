@@ -72,24 +72,25 @@ class UsersListScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No contacts available',
+                      'No contacts found',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: theme.colorScheme.outline,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Demo users will be created automatically',
+                      'Other users will appear here when they sign in to the app',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.outline,
                       ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () {
-                        context.read<UsersBloc>().add(CreateDemoUsersEvent());
+                        context.read<UsersBloc>().add(RefreshUsersEvent());
                       },
-                      child: const Text('Create Demo Users'),
+                      child: const Text('Refresh'),
                     ),
                   ],
                 ),

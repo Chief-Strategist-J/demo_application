@@ -1,304 +1,106 @@
-// firebase_service.dart
-
-import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
 import 'package:demo_application/firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart' as auth;
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:demo_application/models/user.dart';
-import 'package:demo_application/models/call_request.dart';
-import 'package:demo_application/features/videoCall/services/video_call_service.dart';
-import 'package:uuid/uuid.dart';
+import 'package:demo_application/features/navigation_service.dart';
+import 'package:demo_application/services/auth_service.dart';
+import 'package:demo_application/features/auth/login_screen.dart';
+import 'package:demo_application/features/home/home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class FirebaseService {
-  static final FirebaseService _instance = FirebaseService._internal();
-  factory FirebaseService() => _instance;
-  FirebaseService._internal();
+// Background handler for call kit events
+@pragma('vm:entry-point')
+void backgroundCallHandler(CallEvent? callEvent) {
+  if (callEvent == null) return;
 
-  late FirebaseFirestore _firestore;
-  late DatabaseReference _database;
-  late FirebaseMessaging _messaging;
-  late auth.FirebaseAuth _auth;
+  debugPrint('Background call event: $callEvent');
 
-  String? _currentUserId;
-  User? _currentUser;
-  StreamSubscription? _callRequestSubscription;
-  StreamSubscription? _usersSubscription;
+  switch (callEvent.event) {
+    case Event.actionCallIncoming:
+      debugPrint('Incoming call received in background');
+      break;
+    case Event.actionCallAccept:
+      debugPrint('Call accepted in background');
+      NavigationService.navigateToCallingPage(callEvent.body);
+      break;
+    case Event.actionCallDecline:
+      debugPrint('Call declined in background');
+      break;
+    case Event.actionCallEnded:
+      debugPrint('Call ended in background');
+      break;
+    default:
+      break;
+  }
+}
 
-  static const String usersCollection = 'users';
-  static const String callRequestsCollection = 'call_requests';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> initialize() async {
-    _firestore = FirebaseFirestore.instance;
-    _database = FirebaseDatabase.instance.ref();
-    _messaging = FirebaseMessaging.instance;
-    _auth = auth.FirebaseAuth.instance;
-
-    if (_auth.currentUser == null) {
-      await _auth.signInAnonymously();
-    }
-    _currentUserId = _auth.currentUser!.uid;
-
-    await _initializeCurrentUser();
-    await setUserOnlineStatus(true);
-    _setupPresenceSystem();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
   }
 
-  Future<void> _initializeCurrentUser() async {
-    if (_currentUserId == null) return;
-
-    final userDoc = await _firestore
-        .collection(usersCollection)
-        .doc(_currentUserId)
-        .get();
-
-    if (!userDoc.exists) {
-      final fcmToken = await _messaging.getToken() ?? '';
-      final newUser = User(
-        id: _currentUserId!,
-        name: 'Demo User ${_currentUserId!.substring(0, 6)}',
-        avatar: 'https://i.pravatar.cc/150?u=$_currentUserId',
-        fcmToken: fcmToken,
-        isOnline: true,
-        lastSeen: DateTime.now(),
-      );
-
-      await _firestore
-          .collection(usersCollection)
-          .doc(_currentUserId)
-          .set(newUser.toJson());
-      _currentUser = newUser;
-    } else {
-      _currentUser = User.fromJson(userDoc.data()!);
-    }
+  // Initialize CallKit with background handler
+  try {
+    FlutterCallkitIncoming.onEvent.listen(backgroundCallHandler);
+  } catch (e) {
+    debugPrint('CallKit initialization failed: $e');
   }
+  
+  runApp(const MyApp());
+}
 
-  void _setupPresenceSystem() {
-    if (_currentUserId == null) return;
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-    final presenceRef = _database.child('presence').child(_currentUserId!);
-    final isOnlineRef = _database.child('.info/connected');
+  @override
+  Widget build(BuildContext context) {
+    final authService = AuthService();
 
-    isOnlineRef.onValue.listen((event) {
-      if (event.snapshot.value == true) {
-        presenceRef.onDisconnect().set({
-          'isOnline': false,
-          'lastSeen': ServerValue.timestamp,
-        });
-        presenceRef.set({'isOnline': true, 'lastSeen': ServerValue.timestamp});
-      }
-    });
-  }
-
-  Future<void> createDemoUsers() async {
-    final demoUsers = [
-      User(
-        id: 'demo_user_1',
-        name: 'Alice Johnson',
-        avatar: 'https://i.pravatar.cc/150?u=alice',
-        fcmToken: 'demo_token_1',
-        isOnline: true,
-        lastSeen: DateTime.now(),
+    return MaterialApp(
+      title: 'Video Call App',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
       ),
-      User(
-        id: 'demo_user_2',
-        name: 'Bob Smith',
-        avatar: 'https://i.pravatar.cc/150?u=bob',
-        fcmToken: 'demo_token_2',
-        isOnline: true,
-        lastSeen: DateTime.now(),
+      navigatorKey: NavigationService.navigatorKey,
+      debugShowCheckedModeBanner: false,
+      home: StreamBuilder<User?>(
+        stream: authService.authStateChanges,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          
+          if (snapshot.hasData) {
+            return const HomePage();
+          } else {
+            return const LoginScreen();
+          }
+        },
       ),
-      User(
-        id: 'demo_user_3',
-        name: 'Carol Williams',
-        avatar: 'https://i.pravatar.cc/150?u=carol',
-        fcmToken: 'demo_token_3',
-        isOnline: false,
-        lastSeen: DateTime.now().subtract(const Duration(minutes: 15)),
-      ),
-      User(
-        id: 'demo_user_4',
-        name: 'David Brown',
-        avatar: 'https://i.pravatar.cc/150?u=david',
-        fcmToken: 'demo_token_4',
-        isOnline: true,
-        lastSeen: DateTime.now(),
-      ),
-    ];
-
-    final batch = _firestore.batch();
-    for (final user in demoUsers) {
-      if (user.id != _currentUserId) {
-        batch.set(
-          _firestore.collection(usersCollection).doc(user.id),
-          user.toJson(),
-        );
-      }
-    }
-    await batch.commit();
-  }
-
-  Stream<List<User>> getUsers() {
-    return _firestore
-        .collection(usersCollection)
-        .where('id', isNotEqualTo: _currentUserId)
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => User.fromJson(doc.data())).toList(),
-        );
-  }
-
-  User? get currentUser => _currentUser;
-
-  Future<void> setUserOnlineStatus(bool isOnline) async {
-    if (_currentUserId == null) return;
-
-    await _firestore.collection(usersCollection).doc(_currentUserId).update({
-      'isOnline': isOnline,
-      'lastSeen': Timestamp.now(),
-    });
-  }
-
-  Future<CallRequest?> initiateCall(User receiver) async {
-    if (_currentUser == null || receiver.isInCall) return null;
-
-    try {
-      final meetingId = await createMeeting();
-
-      final callRequest = CallRequest(
-        id: const Uuid().v4(),
-        callerId: _currentUser!.id,
-        callerName: _currentUser!.name,
-        callerAvatar: _currentUser!.avatar,
-        receiverId: receiver.id,
-        receiverName: receiver.name,
-        receiverAvatar: receiver.avatar,
-        status: CallStatus.initiated,
-        meetingId: meetingId,
-        createdAt: DateTime.now(),
-      );
-
-      await _firestore
-          .collection(callRequestsCollection)
-          .doc(callRequest.id)
-          .set(callRequest.toJson());
-
-      await Future.wait([
-        _firestore.collection(usersCollection).doc(_currentUser!.id).update({
-          'isInCall': true,
-          'currentCallId': callRequest.id,
-        }),
-        _firestore.collection(usersCollection).doc(receiver.id).update({
-          'isInCall': true,
-          'currentCallId': callRequest.id,
-        }),
-      ]);
-
-      await _sendCallNotification(callRequest);
-
-      return callRequest;
-    } catch (e) {
-      print('Error initiating call: $e');
-      return null;
-    }
-  }
-
-  Stream<CallRequest?> listenForIncomingCalls() {
-    if (_currentUserId == null) {
-      return Stream.value(null);
-    }
-
-    return _firestore
-        .collection(callRequestsCollection)
-        .where('receiverId', isEqualTo: _currentUserId)
-        .where('status', whereIn: [CallStatus.initiated.name, CallStatus.ringing.name])
-        .orderBy('createdAt', descending: true)
-        .limit(1)
-        .snapshots()
-        .map((snapshot) {
-          if (snapshot.docs.isEmpty) return null;
-          return CallRequest.fromJson(snapshot.docs.first.data());
-        });
-  }
-
-  Future<void> acceptCall(String callId) async {
-    await _firestore.collection(callRequestsCollection).doc(callId).update({
-      'status': CallStatus.accepted.name,
-      'answeredAt': Timestamp.now(),
-    });
-  }
-
-  Future<void> declineCall(String callId) async {
-    final callDoc = await _firestore
-        .collection(callRequestsCollection)
-        .doc(callId)
-        .get();
-    if (!callDoc.exists) return;
-
-    final callRequest = CallRequest.fromJson(callDoc.data()!);
-
-    await Future.wait([
-      _firestore.collection(callRequestsCollection).doc(callId).update({
-        'status': CallStatus.declined.name,
-        'endedAt': Timestamp.now(),
-      }),
-      _firestore.collection(usersCollection).doc(callRequest.callerId).update({
-        'isInCall': false,
-        'currentCallId': null,
-      }),
-      _firestore.collection(usersCollection).doc(callRequest.receiverId).update({
-        'isInCall': false,
-        'currentCallId': null,
-      }),
-    ]);
-  }
-
-  Future<void> endCall(String callId) async {
-    final callDoc = await _firestore
-        .collection(callRequestsCollection)
-        .doc(callId)
-        .get();
-    if (!callDoc.exists) return;
-
-    final callRequest = CallRequest.fromJson(callDoc.data()!);
-
-    await Future.wait([
-      _firestore.collection(callRequestsCollection).doc(callId).update({
-        'status': CallStatus.ended.name,
-        'endedAt': Timestamp.now(),
-      }),
-      _firestore.collection(usersCollection).doc(callRequest.callerId).update({
-        'isInCall': false,
-        'currentCallId': null,
-      }),
-      _firestore.collection(usersCollection).doc(callRequest.receiverId).update({
-        'isInCall': false,
-        'currentCallId': null,
-      }),
-    ]);
-  }
-
-  Future<CallRequest?> getCallRequest(String callId) async {
-    final doc = await _firestore
-        .collection(callRequestsCollection)
-        .doc(callId)
-        .get();
-    if (!doc.exists) return null;
-    return CallRequest.fromJson(doc.data()!);
-  }
-
-  Future<void> _sendCallNotification(CallRequest callRequest) async {
-    print('📞 Sending call notification to ${callRequest.receiverName}');
-    print('   From: ${callRequest.callerName}');
-    print('   Call ID: ${callRequest.id}');
-    print('   Meeting ID: ${callRequest.meetingId}');
-  }
-
-  void dispose() {
-    _callRequestSubscription?.cancel();
-    _usersSubscription?.cancel();
-    setUserOnlineStatus(false);
+    );
   }
 }

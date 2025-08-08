@@ -29,7 +29,7 @@ class CallingPage extends StatelessWidget {
           final bloc = context.read<CallingBloc>();
 
           return Scaffold(
-            backgroundColor: theme.colorScheme.background,
+            backgroundColor: theme.colorScheme.surface,
             body: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -48,7 +48,7 @@ class CallingPage extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onBackground,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -57,7 +57,7 @@ class CallingPage extends StatelessWidget {
                               ? _formatDuration(state.durationInSeconds)
                               : 'Ringing...',
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onBackground.withOpacity(
+                            color: theme.colorScheme.onSurface.withOpacity(
                               0.7,
                             ),
                           ),

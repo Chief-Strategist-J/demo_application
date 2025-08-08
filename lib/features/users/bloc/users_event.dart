@@ -10,8 +10,6 @@ abstract class UsersEvent extends Equatable {
 
 class LoadUsersEvent extends UsersEvent {}
 
-class CreateDemoUsersEvent extends UsersEvent {}
-
 class InitiateCallEvent extends UsersEvent {
   final User receiver;
 

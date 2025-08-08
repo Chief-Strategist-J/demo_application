@@ -45,6 +45,7 @@ dependencies:
   firebase_database: ^11.3.10
   cloud_firestore: ^5.4.4
   firebase_auth: ^5.3.1
+  google_sign_in: ^6.2.1
   json_annotation: ^4.9.0
   equatable: ^2.0.5
 
@@ -59,6 +60,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   build_runner: ^2.6.0
+  json_serializable: ^6.8.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

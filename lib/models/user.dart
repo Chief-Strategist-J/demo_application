@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'user.g.dart';
 
@@ -11,6 +12,7 @@ class User {
   final bool isOnline;
   final bool isInCall;
   final String? currentCallId;
+  @JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson)
   final DateTime lastSeen;
 
   const User({
@@ -27,6 +29,33 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserToJson(this);
+
+  // Helper methods for DateTime conversion
+  static DateTime _dateTimeFromJson(dynamic json) {
+    if (json == null) return DateTime.now();
+    
+    // Handle Firestore Timestamp
+    if (json is Timestamp) {
+      return json.toDate();
+    }
+    
+    // Handle string ISO format
+    if (json is String) {
+      return DateTime.parse(json);
+    }
+    
+    // Handle milliseconds since epoch
+    if (json is int) {
+      return DateTime.fromMillisecondsSinceEpoch(json);
+    }
+    
+    // Fallback
+    return DateTime.now();
+  }
+  
+  static dynamic _dateTimeToJson(DateTime dateTime) {
+    return Timestamp.fromDate(dateTime);
+  }
 
   User copyWith({
     String? id,

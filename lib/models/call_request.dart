@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'call_request.g.dart';
 
@@ -24,8 +25,11 @@ class CallRequest {
   final CallStatus status;
   final String? meetingId;
   final String? token;
+  @JsonKey(fromJson: _dateTimeFromJson, toJson: _dateTimeToJson)
   final DateTime createdAt;
+  @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable)
   final DateTime? answeredAt;
+  @JsonKey(fromJson: _dateTimeFromJsonNullable, toJson: _dateTimeToJsonNullable)
   final DateTime? endedAt;
 
   const CallRequest({
@@ -88,4 +92,41 @@ class CallRequest {
   bool get isActive => status == CallStatus.initiated || status == CallStatus.ringing || status == CallStatus.accepted;
   
   bool get isFinished => status == CallStatus.declined || status == CallStatus.missed || status == CallStatus.ended || status == CallStatus.cancelled;
+
+  // Helper methods for DateTime conversion
+  static DateTime _dateTimeFromJson(dynamic json) {
+    if (json == null) return DateTime.now();
+    
+    // Handle Firestore Timestamp
+    if (json is Timestamp) {
+      return json.toDate();
+    }
+    
+    // Handle string ISO format
+    if (json is String) {
+      return DateTime.parse(json);
+    }
+    
+    // Handle milliseconds since epoch
+    if (json is int) {
+      return DateTime.fromMillisecondsSinceEpoch(json);
+    }
+    
+    // Fallback
+    return DateTime.now();
+  }
+  
+  static DateTime? _dateTimeFromJsonNullable(dynamic json) {
+    if (json == null) return null;
+    return _dateTimeFromJson(json);
+  }
+  
+  static dynamic _dateTimeToJson(DateTime dateTime) {
+    return Timestamp.fromDate(dateTime);
+  }
+  
+  static dynamic _dateTimeToJsonNullable(DateTime? dateTime) {
+    if (dateTime == null) return null;
+    return Timestamp.fromDate(dateTime);
+  }
 }

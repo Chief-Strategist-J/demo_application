@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
+import 'package:demo_application/features/call/calling_page.dart';
 
 class NavigationService {
   GlobalKey<NavigatorState> navigationKey = GlobalKey<NavigatorState>();
+
+  // Static navigator key for main app
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   BuildContext? get appContext => navigationKey.currentContext;
 
@@ -14,6 +19,35 @@ class NavigationService {
   NavigationService._private();
 
   static NavigationService get instance => _instance;
+
+  // Static method to navigate to calling page from background
+  static Future<void> navigateToCallingPage(dynamic callData) async {
+    final context = navigatorKey.currentContext;
+    if (context != null && callData is Map<String, dynamic>) {
+      // Convert call data to CallKitParams if needed
+      final callParams = CallKitParams(
+        id: callData['id'] ?? '',
+        nameCaller: callData['nameCaller'] ?? 'Unknown',
+        appName: callData['appName'] ?? 'Video Call',
+        avatar: callData['avatar'],
+        handle: callData['handle'] ?? '',
+        type: callData['type'] ?? 0,
+        duration: callData['duration'] ?? 30000,
+        textAccept: callData['textAccept'] ?? 'Accept',
+        textDecline: callData['textDecline'] ?? 'Decline',
+        extra: callData['extra'] ?? <String, dynamic>{},
+        headers: callData['headers'] ?? <String, dynamic>{},
+        android: callData['android'],
+        ios: callData['ios'],
+      );
+      
+      await navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => CallingPage(callKitParams: callParams),
+        ),
+      );
+    }
+  }
 
   Future<T?> pushNamed<T extends Object>(
     String routeName, {

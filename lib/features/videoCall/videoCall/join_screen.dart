@@ -36,7 +36,7 @@ class JoinScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
-          backgroundColor: theme.colorScheme.background,
+          backgroundColor: theme.colorScheme.surface,
           body: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -58,7 +58,7 @@ class JoinScreen extends StatelessWidget {
                       'Enter a meeting ID or create a new one to begin.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onBackground.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                     const SizedBox(height: 32),

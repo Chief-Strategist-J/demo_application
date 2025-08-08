@@ -7,41 +7,22 @@ part of 'call_request.dart';
 // **************************************************************************
 
 CallRequest _$CallRequestFromJson(Map<String, dynamic> json) => CallRequest(
-      id: json['id'] as String,
-      callerId: json['callerId'] as String,
-      callerName: json['callerName'] as String,
-      callerAvatar: json['callerAvatar'] as String,
-      receiverId: json['receiverId'] as String,
-      receiverName: json['receiverName'] as String,
-      receiverAvatar: json['receiverAvatar'] as String,
-      status: _$enumDecodeNullable(_$CallStatusEnumMap, json['status']) ??
-          CallStatus.initiated,
-      meetingId: json['meetingId'] as String?,
-      token: json['token'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      answeredAt: json['answeredAt'] == null
-          ? null
-          : DateTime.parse(json['answeredAt'] as String),
-      endedAt: json['endedAt'] == null
-          ? null
-          : DateTime.parse(json['endedAt'] as String),
-    );
-
-T? _$enumDecodeNullable<T>(
-  Map<T, dynamic> enumValues,
-  dynamic source,
-) {
-  if (source == null) return null;
-  return enumValues.entries
-      .singleWhere(
-        (e) => e.value == source,
-        orElse: () => throw ArgumentError(
-          '`$source` is not one of the supported values: '
-          '${enumValues.values.join(', ')}',
-        ),
-      )
-      .key;
-}
+  id: json['id'] as String,
+  callerId: json['callerId'] as String,
+  callerName: json['callerName'] as String,
+  callerAvatar: json['callerAvatar'] as String,
+  receiverId: json['receiverId'] as String,
+  receiverName: json['receiverName'] as String,
+  receiverAvatar: json['receiverAvatar'] as String,
+  status:
+      $enumDecodeNullable(_$CallStatusEnumMap, json['status']) ??
+      CallStatus.initiated,
+  meetingId: json['meetingId'] as String?,
+  token: json['token'] as String?,
+  createdAt: CallRequest._dateTimeFromJson(json['createdAt']),
+  answeredAt: CallRequest._dateTimeFromJsonNullable(json['answeredAt']),
+  endedAt: CallRequest._dateTimeFromJsonNullable(json['endedAt']),
+);
 
 Map<String, dynamic> _$CallRequestToJson(CallRequest instance) =>
     <String, dynamic>{
@@ -55,9 +36,9 @@ Map<String, dynamic> _$CallRequestToJson(CallRequest instance) =>
       'status': _$CallStatusEnumMap[instance.status]!,
       'meetingId': instance.meetingId,
       'token': instance.token,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'answeredAt': instance.answeredAt?.toIso8601String(),
-      'endedAt': instance.endedAt?.toIso8601String(),
+      'createdAt': CallRequest._dateTimeToJson(instance.createdAt),
+      'answeredAt': CallRequest._dateTimeToJsonNullable(instance.answeredAt),
+      'endedAt': CallRequest._dateTimeToJsonNullable(instance.endedAt),
     };
 
 const _$CallStatusEnumMap = {

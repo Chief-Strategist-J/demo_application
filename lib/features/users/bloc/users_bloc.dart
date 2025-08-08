@@ -1,83 +1,51 @@
 import 'dart:async';
+import 'package:demo_application/models/user.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:demo_application/features/users/bloc/users_event.dart';
 import 'package:demo_application/features/users/bloc/users_state.dart';
 import 'package:demo_application/services/firebase_service.dart';
+import 'package:demo_application/services/auth_service.dart';
 
 class UsersBloc extends Bloc<UsersEvent, UsersState> {
   final FirebaseService _firebaseService = FirebaseService();
-  StreamSubscription? _usersSubscription;
+  final AuthService _authService = AuthService();
 
   UsersBloc() : super(const UsersState()) {
     on<LoadUsersEvent>(_onLoadUsers);
-    on<CreateDemoUsersEvent>(_onCreateDemoUsers);
     on<InitiateCallEvent>(_onInitiateCall);
     on<CancelCallEvent>(_onCancelCall);
     on<RefreshUsersEvent>(_onRefreshUsers);
 
-    // Initialize Firebase service
-    _initializeFirebase();
-  }
-
-  Future<void> _initializeFirebase() async {
-    try {
-      await _firebaseService.initialize();
-      add(LoadUsersEvent());
-    } catch (e) {
-      emit(state.copyWith(error: 'Failed to initialize: $e'));
-    }
+    // Load users immediately
+    add(LoadUsersEvent());
   }
 
   Future<void> _onLoadUsers(LoadUsersEvent event, Emitter<UsersState> emit) async {
     emit(state.copyWith(loading: true, error: null));
 
     try {
-      // Get current user
-      final currentUser = _firebaseService.currentUser;
-      
-      // Listen to users stream
-      await _usersSubscription?.cancel();
-      _usersSubscription = _firebaseService.getUsers().listen(
-        (users) {
-          if (!isClosed) {
-            emit(state.copyWith(
-              users: users,
-              currentUser: currentUser,
-              loading: false,
-            ));
-          }
+      final currentUser = await _authService.getCurrentUserData();
+
+      await emit.forEach<List<User>>(
+        _firebaseService.getUsers(),
+        onData: (users) {
+          return state.copyWith(
+            users: users,
+            currentUser: currentUser,
+            loading: false,
+          );
         },
-        onError: (error) {
-          emit(state.copyWith(
+        onError: (error, stackTrace) {
+          return state.copyWith(
             loading: false,
             error: 'Error loading users: $error',
-          ));
+          );
         },
       );
-
-      // Initial emit with current user
-      emit(state.copyWith(currentUser: currentUser, loading: false));
     } catch (e) {
       emit(state.copyWith(
         loading: false,
         error: 'Failed to load users: $e',
-      ));
-    }
-  }
-
-  Future<void> _onCreateDemoUsers(CreateDemoUsersEvent event, Emitter<UsersState> emit) async {
-    emit(state.copyWith(loading: true, error: null));
-
-    try {
-      await _firebaseService.createDemoUsers();
-      emit(state.copyWith(loading: false));
-      
-      // Refresh users list
-      add(LoadUsersEvent());
-    } catch (e) {
-      emit(state.copyWith(
-        loading: false,
-        error: 'Failed to create demo users: $e',
       ));
     }
   }
@@ -87,7 +55,7 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
 
     try {
       final callRequest = await _firebaseService.initiateCall(event.receiver);
-      
+
       if (callRequest != null) {
         emit(state.copyWith(
           loading: false,
@@ -125,14 +93,6 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
   }
 
   void _onRefreshUsers(RefreshUsersEvent event, Emitter<UsersState> emit) {
-    // This event is triggered by the stream listener
-    // No additional logic needed here
-  }
-
-  @override
-  Future<void> close() {
-    _usersSubscription?.cancel();
-    _firebaseService.dispose();
-    return super.close();
+    add(LoadUsersEvent());
   }
 }
