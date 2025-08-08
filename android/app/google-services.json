@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "756273477389",
+    "project_id": "call-de",
+    "storage_bucket": "call-de.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:756273477389:android:93ac0ef75dea2555186244",
+        "android_client_info": {
+          "package_name": "com.example.demo_application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSgNT91_c9hsoh4LQivszUN6NGmfXmtfA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
